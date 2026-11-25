@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Candy Tower Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tb: 154px;
+    --ink: #8a3b7a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden}
+  body{
+    font-family:'Baloo 2','Chalkboard SE','Comic Sans MS','Trebuchet MS',system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,#c8ebff 0%,#dff4ff 26%,#ffe9f8 64%,#ffd6ee 100%);
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;-webkit-user-select:none;
+    touch-action:manipulation;
+  }
+
+  /* ---------- sky ---------- */
+  #sky{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+  .sun{
+    position:absolute;top:26px;right:44px;width:104px;height:104px;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,#fffdf0,#ffeaa6 58%,#ffd97a);
+    box-shadow:0 0 0 16px rgba(255,246,190,.38),0 0 0 34px rgba(255,246,190,.20);
+  }
+  .cloud{position:absolute;top:0;left:0;will-change:transform}
+  .cloud svg{display:block}
+  .c1{top:54px;  animation:drift 78s linear infinite;      --sc:.9}
+  .c2{top:140px; animation:drift 104s linear infinite -30s; --sc:1.15}
+  .c3{top:24px;  animation:drift 132s linear infinite -70s; --sc:.7}
+  .c4{top:210px; animation:drift 92s linear infinite -55s;  --sc:1}
+  .c5{top:300px; animation:drift 118s linear infinite -12s; --sc:.8}
+  .c6{top:88px;  animation:drift 150s linear infinite -95s; --sc:1.3}
+  @keyframes drift{
+    from{transform:translateX(-32vw) scale(var(--sc))}
+    to{transform:translateX(128vw) scale(var(--sc))}
+  }
+  .cloud svg{transform-origin:50% 50%}
+
+  #ground{position:fixed;left:0;right:0;bottom:0;height:210px;pointer-events:none}
+  #ground svg{display:block;width:100%;height:100%}
+
+  /* ---------- header ---------- */
+  #hud{
+    position:fixed;top:0;left:0;right:0;z-index:40;
+    display:flex;justify-content:space-between;align-items:flex-start;
+    gap:10px;padding:14px 16px;pointer-events:none;
+  }
+  #hud > *{pointer-events:auto}
+  .brand{
+    display:flex;align-items:center;gap:10px;
+    font:inherit;text-align:left;cursor:pointer;color:inherit;
+    background:rgba(255,255,255,.82);
+    border:4px solid #ffd3ec;border-radius:28px;
+    padding:6px 18px 8px 12px;
+    box-shadow:0 6px 0 rgba(255,186,222,.55);
+    transition:transform .12s,box-shadow .12s,background .2s;
+  }
+  .brand:hover{background:#fff}
+  .brand:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(255,186,222,.55)}
+  .brand .lolly{width:44px;height:44px;flex:0 0 auto}
+  .brand-title{
+    display:block;font-size:27px;font-weight:800;line-height:1.05;letter-spacing:.4px;
+    color:#f45ba5;
+    -webkit-text-stroke:2.5px #fff;paint-order:stroke fill;
+  }
+  .brand-sub{display:block;font-size:14px;font-weight:700;color:#b2579c}
+
+  .clear-btn{
+    font:inherit;font-weight:800;font-size:15px;color:#2f9f88;
+    display:flex;align-items:center;gap:7px;
+    background:linear-gradient(180deg,#ffffff,#d9fff4);
+    border:4px solid #9fe8d6;border-radius:24px;
+    padding:9px 16px 9px 12px;cursor:pointer;
+    box-shadow:inset 0 3px 0 #fff,0 5px 0 #8fdfcc;
+    transition:transform .12s,box-shadow .12s;
+  }
+  .clear-btn svg{width:24px;height:24px}
+  .clear-btn:active{transform:translateY(4px);box-shadow:inset 0 3px 0 #fff,0 1px 0 #8fdfcc}
+
+  /* ---------- build stage ---------- */
+  #stage{
+    position:fixed;left:0;right:0;top:96px;bottom:var(--tb);
+    z-index:10;cursor:none;
+  }
+  /* full-width candy kerb: 90px of bleed each side keeps its ends off screen */
+  #plot{
+    position:absolute;left:-90px;right:-90px;bottom:0;height:64px;pointer-events:none;
+    border:4px solid #35bda2;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,0) 26px) top left / 100% 30px no-repeat,
+      radial-gradient(circle, #ffffff 0 3.8px, rgba(255,255,255,0) 4.4px) 6px 7px / 26px 26px repeat-x,
+      radial-gradient(circle, rgba(255,255,255,.72) 0 2.6px, rgba(255,255,255,0) 3.2px) 19px 36px / 26px 26px repeat-x,
+      linear-gradient(180deg, #e8fffa 0%, #abf3dc 45%, #83e8ca 100%);
+    box-shadow:inset 0 -8px 0 rgba(53,189,162,.10);
+  }
+
+  #tower{
+    position:absolute;left:50%;bottom:48px;width:0;height:0;
+    transform-origin:0 100%;
+    transition:transform .38s cubic-bezier(.34,1.4,.64,1);
+  }
+  .piece{
+    position:absolute;left:0;bottom:0;
+    transition:bottom .3s cubic-bezier(.34,1.35,.64,1),left .3s cubic-bezier(.34,1.35,.64,1);
+    will-change:bottom,left;
+  }
+  .piece svg{display:block;transition:width .26s ease,height .26s ease;overflow:visible}
+  .piece .bounce{animation:dropIn .55s cubic-bezier(.22,1.05,.36,1)}
+  .piece .landed{animation:squash .4s ease-out}
+  @keyframes dropIn{
+    0%{transform:translateY(-130px) scale(.86,1.12);opacity:0}
+    35%{opacity:1}
+    48%{transform:translateY(0) scale(1.2,.78)}
+    64%{transform:translateY(0) scale(.93,1.09)}
+    80%{transform:translateY(0) scale(1.05,.96)}
+    100%{transform:translateY(0) scale(1,1)}
+  }
+  @keyframes squash{
+    0%{transform:scale(1.16,.8)}
+    55%{transform:scale(.95,1.06)}
+    100%{transform:scale(1,1)}
+  }
+
+  #ghost{
+    position:absolute;left:0;bottom:6px;
+    transform:translateX(-50%);
+    border:4px dashed rgba(255,140,200,.85);
+    border-radius:20px;
+    background:rgba(255,255,255,.34);
+    transition:width .25s,height .25s,bottom .3s,left .2s;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;animation:ghostPulse 2.2s ease-in-out infinite;
+  }
+  #ghost span{
+    font-size:13px;font-weight:800;color:#e46aae;letter-spacing:.5px;
+    opacity:.9;white-space:nowrap;
+  }
+  @keyframes ghostPulse{
+    0%,100%{opacity:.55;transform:translateX(-50%) scale(.985)}
+    50%{opacity:.95;transform:translateX(-50%) scale(1.015)}
+  }
+
+  /* ---------- toolbar ---------- */
+  #toolbar{
+    position:fixed;left:50%;bottom:12px;transform:translateX(-50%);
+    z-index:30;
+    display:flex;gap:10px;align-items:stretch;
+    width:min(720px,calc(100vw - 18px));
+    padding:10px;
+    background:rgba(255,255,255,.78);
+    border:4px solid #ffd0e9;border-radius:34px;
+    box-shadow:0 9px 0 rgba(255,176,216,.5);
+    backdrop-filter:blur(7px);
+    -webkit-backdrop-filter:blur(7px);
+  }
+  .shape-btn{
+    flex:1 1 0;min-width:0;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    font:inherit;cursor:pointer;
+    background:linear-gradient(180deg,#fff8fd,#ffe4f4);
+    border:4px solid #f7aed2;border-radius:26px;
+    padding:6px 4px 7px;
+    box-shadow:inset 0 3px 0 #fff,0 6px 0 #f0a6c9;
+    transition:transform .16s cubic-bezier(.34,1.5,.64,1),box-shadow .16s,background .2s,border-color .2s;
+    color:#b0428c;
+  }
+  .shape-btn .icon{display:block;width:100%;height:64px;pointer-events:none}
+  .shape-btn .label{font-size:15px;font-weight:800;letter-spacing:.3px;line-height:1;pointer-events:none}
+  .shape-btn:active{transform:translateY(4px);box-shadow:inset 0 3px 0 #fff,0 2px 0 #f0a6c9}
+  .shape-btn.selected{
+    transform:translateY(-7px) scale(1.035);
+    background:linear-gradient(180deg,#ffffff,#ffeaf7);
+    border-color:#ff7cc0;
+    box-shadow:inset 0 3px 0 #fff,0 10px 0 #ff8ec8,0 0 0 6px rgba(255,255,255,.75);
+  }
+  .shape-btn.selected .label{color:#e04f9d}
+  .shape-btn.pop{animation:btnPop .34s cubic-bezier(.3,1.6,.6,1)}
+  @keyframes btnPop{0%{transform:scale(.9)}60%{transform:scale(1.09)}100%{transform:scale(1)}}
+
+  /* ---------- edit menu ---------- */
+  #menu{
+    position:fixed;z-index:80;
+    transform:translate(-50%,-100%);
+    background:rgba(255,255,255,.95);
+    border:4px solid #ffc9e6;border-radius:26px;
+    padding:8px 10px 10px;
+    box-shadow:0 8px 0 rgba(255,175,216,.55);
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    transition:opacity .16s;
+  }
+  #menu.below{transform:translate(-50%,0)}
+  #menu.hidden{opacity:0;pointer-events:none;visibility:hidden}
+  #menu .mtitle{font-size:13px;font-weight:800;color:#b34a91;letter-spacing:.4px}
+  #menu .mrow{display:flex;gap:9px}
+  .mbtn{
+    width:84px;height:76px;border-radius:22px;cursor:pointer;
+    border:4px solid #f7a6cf;
+    background:linear-gradient(180deg,#fff,#ffe5f3);
+    box-shadow:inset 0 3px 0 #fff,0 5px 0 #f0a6c9;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    font:inherit;font-size:13px;font-weight:800;color:#c0469a;
+    transition:transform .12s,box-shadow .12s;
+  }
+  .mbtn:active{transform:translateY(4px);box-shadow:inset 0 3px 0 #fff,0 1px 0 #f0a6c9}
+  .mbtn svg{width:32px;height:32px;pointer-events:none}
+
+  /* ---------- candy shop ---------- */
+  #shop{
+    position:fixed;left:50%;top:50%;z-index:100;
+    transform:translate(-50%,-50%) scale(1);
+    width:min(560px,calc(100vw - 28px));
+    background:linear-gradient(180deg,#fffdfe,#ffeaf7);
+    border:5px solid #ffc9e6;border-radius:38px;
+    padding:16px 18px 16px;
+    box-shadow:0 12px 0 rgba(255,170,214,.5),0 0 0 12px rgba(255,255,255,.45);
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+    transition:opacity .2s,transform .2s,visibility .2s;
+  }
+  #shop.hidden{opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-50%) scale(.94)}
+  .shop-title{font-size:24px;font-weight:800;color:#e04f9d;-webkit-text-stroke:2px #fff;paint-order:stroke fill}
+  .shop-sub{font-size:14px;font-weight:700;color:#b2579c;margin-top:-10px}
+  .shop-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;
+    max-height:min(58vh,430px);overflow-y:auto;overscroll-behavior:contain;
+    padding:3px 2px 6px;
+  }
+  .shop-card{
+    position:relative;
+    display:flex;align-items:center;gap:8px;cursor:pointer;font:inherit;min-width:0;
+    background:linear-gradient(180deg,#fff,#ffe4f4);
+    border:4px solid #f7aed2;border-radius:26px;padding:7px 10px;
+    box-shadow:inset 0 3px 0 #fff,0 6px 0 #f0a6c9;
+    transition:transform .12s,box-shadow .12s;
+  }
+  .shop-card:active{transform:translateY(4px);box-shadow:inset 0 3px 0 #fff,0 2px 0 #f0a6c9}
+  .shop-icon{display:block;width:64px;height:64px;flex:0 0 auto}
+  .shop-text{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+  .shop-label{font-size:18px;font-weight:800;color:#b0428c;line-height:1.1}
+  .shop-tag{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c07ab0}
+  .shop-card.equipped{
+    border-color:#5fd6b6;background:linear-gradient(180deg,#fff,#ddfff5);
+    box-shadow:inset 0 3px 0 #fff,0 6px 0 #8fdfcc;
+  }
+  .shop-card.equipped .shop-label{color:#2f9f88}
+  .shop-card.equipped .shop-tag{color:#39a894}
+  .shop-card.equipped::after{
+    content:'✓';position:absolute;top:-7px;right:-5px;width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:800;color:#fff;background:#4ecfb0;border:3px solid #fff;
+  }
+  .shop-close{
+    font:inherit;font-weight:800;font-size:17px;color:#c0469a;cursor:pointer;
+    background:linear-gradient(180deg,#fff,#ffe0f2);
+    border:4px solid #f7a6cf;border-radius:22px;padding:8px 30px;
+    box-shadow:inset 0 3px 0 #fff,0 5px 0 #f0a6c9;
+    transition:transform .12s,box-shadow .12s;
+  }
+  .shop-close:active{transform:translateY(4px);box-shadow:inset 0 3px 0 #fff,0 1px 0 #f0a6c9}
+
+  /* ---------- hammer ---------- */
+  #hammer{
+    position:fixed;left:0;top:0;z-index:90;
+    width:78px;height:78px;pointer-events:none;
+    opacity:0;transition:opacity .18s;
+    will-change:transform;
+  }
+  #hammer.show{opacity:1}
+  #hammer .tilt{transform-origin:50% 38%;transform:rotate(-12deg)}
+  #hammer.swing .tilt{animation:hit .28s ease-out}
+  @keyframes hit{
+    0%{transform:rotate(-12deg)}
+    28%{transform:rotate(28deg)}
+    58%{transform:rotate(-16deg)}
+    100%{transform:rotate(-12deg)}
+  }
+  #hammer svg{display:block;width:78px;height:78px}
+
+  /* ---------- sparkles ---------- */
+  .sparkle{position:fixed;z-index:70;pointer-events:none;animation:fly .78s cubic-bezier(.2,.7,.4,1) forwards}
+  @keyframes fly{
+    0%{transform:translate(-50%,-50%) scale(.35) rotate(0deg);opacity:1}
+    70%{opacity:1}
+    100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(var(--s)) rotate(150deg);opacity:0}
+  }
+  .puff{
+    position:fixed;z-index:69;border-radius:50%;pointer-events:none;
+    border:6px solid rgba(255,255,255,.9);
+    animation:puff .55s ease-out forwards;
+  }
+  @keyframes puff{
+    0%{transform:translate(-50%,-50%) scale(.35);opacity:.95}
+    100%{transform:translate(-50%,-50%) scale(1.9);opacity:0}
+  }
+
+  /* ---------- life inside the windows ---------- */
+  .win-light{animation-name:lights;animation-iteration-count:infinite;animation-timing-function:ease-in-out;opacity:0}
+  @keyframes lights{
+    0%,38%{opacity:0}
+    46%,72%{opacity:.82}
+    80%,100%{opacity:0}
+  }
+  .walker{animation-name:walkPast;animation-iteration-count:infinite;animation-timing-function:linear}
+  @keyframes walkPast{
+    from{transform:translateX(-20px)}
+    to{transform:translateX(var(--dx,58px))}
+  }
+  .peek{animation-name:peekOut;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+  @keyframes peekOut{
+    0%,58%{transform:translateY(24px)}
+    68%,88%{transform:translateY(0)}
+    100%{transform:translateY(24px)}
+  }
+
+  /* ---------- people + traffic on the ground ---------- */
+  #life{position:absolute;inset:0;pointer-events:none;z-index:6}
+  .peep{position:absolute;bottom:8px;left:0;z-index:1;will-change:transform}
+  .peep-inner{display:block;transform-origin:50% 100%}
+  .peep svg{
+    display:block;width:34px;height:46px;transform-origin:50% 100%;
+    animation:peepBob .54s ease-in-out infinite alternate;
+  }
+  @keyframes peepBob{from{transform:translateY(0) rotate(-1.6deg)}to{transform:translateY(-2px) rotate(1.6deg)}}
+  .peep .legA,.peep .legB{transform-box:fill-box;transform-origin:50% 0;animation:legSwing .54s ease-in-out infinite alternate}
+  .peep .legB{animation-direction:alternate-reverse}
+  @keyframes legSwing{from{transform:rotate(-11deg)}to{transform:rotate(11deg)}}
+  .car{position:absolute;bottom:6px;left:0;z-index:2;will-change:transform}
+  .car-inner{display:block}
+  .car svg{display:block;width:76px;height:42px;animation:carBump .5s ease-in-out infinite alternate}
+  @keyframes carBump{from{transform:translateY(0)}to{transform:translateY(-1.5px)}}
+
+  /* ---------- birds ---------- */
+  .bird{position:absolute;left:0;top:0;z-index:2;pointer-events:none;will-change:transform}
+  .bird-inner{display:block}
+  .bird svg{display:block;overflow:visible}
+  .bird .flapL,.bird .flapR{transform-box:fill-box;animation:flap .3s ease-in-out infinite alternate}
+  .bird .flapL{transform-origin:100% 100%}
+  .bird .flapR{transform-origin:0% 100%;animation-delay:-.15s}
+  @keyframes flap{from{transform:rotate(0deg)}to{transform:rotate(-24deg)}}
+
+  @media (max-width: 640px){
+    :root{--tb:140px}
+    .brand-title{font-size:20px;-webkit-text-stroke:2px #fff}
+    .brand-sub{display:none}
+    .brand{padding:5px 12px 6px 8px;border-radius:22px}
+    .brand .lolly{width:34px;height:34px}
+    .shop-icon{width:58px;height:58px}
+    .shop-label{font-size:16px}
+    .clear-btn{font-size:13px;padding:7px 12px 7px 9px;border-radius:20px}
+    .clear-btn svg{width:20px;height:20px}
+    .shape-btn .icon{height:52px}
+    .shape-btn .label{font-size:12px}
+    #stage{top:80px}
+    #toolbar{gap:7px;padding:7px;border-radius:28px}
+    .shape-btn{border-radius:22px;border-width:3px;padding:4px 3px 5px}
+    #menu .mbtn{width:76px;height:70px}
+  }
+  @media (max-height: 620px){
+    .shape-btn .icon{height:44px}
+    :root{--tb:126px}
+    #stage{top:70px}
+  }
+</style>
+</head>
+<body>
+
+<!-- candy gradients -->
+<svg aria-hidden="true" style="position:fixed;width:0;height:0;overflow:hidden">
+  <defs>
+    <linearGradient id="gPink" x1="0.15" y1="0" x2="0.45" y2="1">
+      <stop offset="0" stop-color="#ffe6f4"/>
+      <stop offset=".42" stop-color="#ffa9d6"/>
+      <stop offset="1" stop-color="#ff79bd"/>
+    </linearGradient>
+    <linearGradient id="gBubble" x1="0.15" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#ffdff9"/>
+      <stop offset=".45" stop-color="#ff9fe8"/>
+      <stop offset="1" stop-color="#f06fd2"/>
+    </linearGradient>
+    <linearGradient id="gSky" x1="0.15" y1="0" x2="0.45" y2="1">
+      <stop offset="0" stop-color="#e8faff"/>
+      <stop offset=".42" stop-color="#a2ddff"/>
+      <stop offset="1" stop-color="#61c2f6"/>
+    </linearGradient>
+    <linearGradient id="gAqua" x1="0.15" y1="0" x2="0.45" y2="1">
+      <stop offset="0" stop-color="#e4fffa"/>
+      <stop offset=".45" stop-color="#9df0dd"/>
+      <stop offset="1" stop-color="#5cdcc2"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div id="sky">
+  <div class="sun"></div>
+
+  <div class="cloud c1">
+    <svg viewBox="0 0 220 120" width="220" height="120">
+      <g fill="#ffffff">
+        <circle cx="62" cy="72" r="36"/><circle cx="110" cy="52" r="44"/>
+        <circle cx="160" cy="76" r="32"/><rect x="24" y="70" width="170" height="38" rx="19"/>
+      </g>
+      <ellipse cx="118" cy="104" rx="74" ry="8" fill="#ffd9ee" opacity=".75"/>
+    </svg>
+  </div>
+  <div class="cloud c2">
+    <svg viewBox="0 0 220 120" width="220" height="120">
+      <g fill="#ffffff">
+        <circle cx="60" cy="74" r="32"/><circle cx="108" cy="54" r="40"/>
+        <circle cx="156" cy="78" r="28"/><rect x="30" y="72" width="158" height="34" rx="17"/>
+      </g>
+      <ellipse cx="116" cy="102" rx="68" ry="7" fill="#ffd9ee" opacity=".7"/>
+    </svg>
+  </div>
+  <div class="cloud c3">
+    <svg viewBox="0 0 220 120" width="220" height="120">
+      <g fill="#ffffff">
+        <circle cx="70" cy="72" r="30"/><circle cx="112" cy="54" r="36"/>
+        <circle cx="152" cy="74" r="26"/><rect x="42" y="70" width="136" height="32" rx="16"/>
+      </g>
+    </svg>
+  </div>
+  <div class="cloud c4">
+    <svg viewBox="0 0 220 120" width="220" height="120">
+      <g fill="#ffffff">
+        <circle cx="62" cy="72" r="34"/><circle cx="110" cy="52" r="42"/>
+        <circle cx="158" cy="76" r="30"/><rect x="26" y="70" width="168" height="36" rx="18"/>
+      </g>
+      <ellipse cx="118" cy="104" rx="72" ry="8" fill="#ffd9ee" opacity=".55"/>
+    </svg>
+  </div>
+  <div class="cloud c5">
+    <svg viewBox="0 0 220 120" width="220" height="120">
+      <g fill="#ffffff">
+        <circle cx="66" cy="74" r="32"/><circle cx="112" cy="56" r="38"/>
+        <circle cx="154" cy="78" r="27"/><rect x="34" y="72" width="150" height="34" rx="17"/>
+      </g>
+    </svg>
+  </div>
+  <div class="cloud c6">
+    <svg viewBox="0 0 220 120" width="220" height="120">
+      <g fill="#ffffff">
+        <circle cx="58" cy="70" r="38"/><circle cx="112" cy="48" r="46"/>
+        <circle cx="164" cy="74" r="33"/><rect x="22" y="68" width="176" height="40" rx="20"/>
+      </g>
+      <ellipse cx="118" cy="106" rx="78" ry="9" fill="#ffd9ee" opacity=".6"/>
+    </svg>
+  </div>
+</div>
+
+<div id="ground">
+  <svg viewBox="0 0 1440 210" preserveAspectRatio="none">
+    <path d="M0 52 Q 180 4 360 50 Q 520 92 700 38 Q 880 -10 1060 48 Q 1220 98 1440 42 L1440 210 L0 210 Z" fill="#bdf4de"/>
+    <path d="M0 96 Q 200 52 400 92 Q 600 132 820 86 Q 1040 44 1240 94 Q 1340 118 1440 90 L1440 210 L0 210 Z" fill="#ffe4f4"/>
+    <path d="M0 142 Q 260 110 520 140 Q 780 170 1040 140 Q 1240 116 1440 144 L1440 210 L0 210 Z" fill="#ffcfe8"/>
+    <g fill="#ffffff" opacity=".72">
+      <circle cx="120" cy="176" r="5"/><circle cx="250" cy="192" r="4"/><circle cx="360" cy="172" r="6"/>
+      <circle cx="520" cy="196" r="4"/><circle cx="660" cy="178" r="5"/><circle cx="790" cy="194" r="6"/>
+      <circle cx="930" cy="174" r="4"/><circle cx="1080" cy="192" r="5"/><circle cx="1210" cy="176" r="4"/>
+      <circle cx="1330" cy="194" r="6"/><circle cx="1400" cy="170" r="4"/>
+    </g>
+    <g fill="#9ff0d8" opacity=".8">
+      <circle cx="200" cy="156" r="6"/><circle cx="600" cy="160" r="5"/><circle cx="1000" cy="158" r="6"/>
+      <circle cx="1260" cy="162" r="5"/>
+    </g>
+  </svg>
+</div>
+
+<header id="hud">
+  <button id="shopBtn" class="brand" type="button" aria-label="Open the candy shape shop">
+    <svg class="lolly" viewBox="0 0 44 44" aria-hidden="true">
+      <rect x="19" y="18" width="6" height="24" rx="3" fill="#fff" stroke="#f0a6c9" stroke-width="3"/>
+      <circle cx="22" cy="16" r="13" fill="url(#gBubble)" stroke="#d24fbe" stroke-width="3"/>
+      <path d="M22 16 m-8 0 a8 8 0 0 1 8 -8" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
+      <circle cx="17" cy="11" r="2.6" fill="#fff" opacity=".9"/>
+    </svg>
+    <span class="brand-text">
+      <span class="brand-title">Candy Tower Shop</span>
+      <span class="brand-sub">Pick a shape, then tap anywhere — even the sides!</span>
+    </span>
+  </button>
+
+  <button id="clear" class="clear-btn" type="button" title="Tidy the tower away">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 19h16" stroke="#31b49b" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M8 19 15 6" stroke="#31b49b" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="13" y="2.6" width="8" height="6.4" rx="2.2" transform="rotate(28 17 5.8)" fill="#9df0dd" stroke="#31b49b" stroke-width="2.4"/>
+    </svg>
+    Tidy
+  </button>
+</header>
+
+<div id="stage">
+  <div id="life" aria-hidden="true"></div>
+  <div id="plot" aria-hidden="true"></div>
+  <div id="tower">
+    <div id="ghost"><span>tap!</span></div>
+  </div>
+</div>
+
+<div id="toolbar" role="toolbar" aria-label="Candy building shapes"></div>
+
+<div id="shop" class="hidden" role="dialog" aria-label="Candy shape shop">
+  <div class="shop-title">Candy Shape Shop</div>
+  <div class="shop-sub">Tap a shape to swap it into your tray!</div>
+  <div class="shop-grid" id="shopGrid"></div>
+  <button class="shop-close" id="shopClose" type="button">All done!</button>
+</div>
+
+<div id="menu" class="hidden" role="dialog" aria-label="Change this piece">
+  <div class="mtitle">What shall we do?</div>
+  <div class="mrow">
+    <button class="mbtn" id="spinBtn" type="button">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M26 16a10 10 0 1 1-3.4-7.5" fill="none" stroke="#e3538f" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M26 4v7h-7" fill="none" stroke="#e3538f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Spin
+    </button>
+    <button class="mbtn" id="popBtn" type="button">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M10 10l12 12M22 10L10 22" stroke="#c0469a" stroke-width="3.6" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="13" fill="none" stroke="#ffb3dd" stroke-width="2.4"/>
+      </svg>
+      Pop
+    </button>
+  </div>
+</div>
+
+<div id="hammer">
+  <div class="tilt">
+    <svg viewBox="0 0 90 90" aria-hidden="true">
+      <rect x="40" y="28" width="14" height="54" rx="7" fill="#ffe3f3" stroke="#f0a6c9" stroke-width="4"/>
+      <rect x="44" y="36" width="6" height="38" rx="3" fill="#fff" opacity=".8"/>
+      <g transform="rotate(-13 45 30)">
+        <rect x="13" y="7" width="64" height="36" rx="18" fill="url(#gPink)" stroke="#e3538f" stroke-width="4"/>
+        <rect x="22" y="13" width="40" height="10" rx="5" fill="#ffffff" opacity=".6"/>
+        <circle cx="25" cy="31" r="7" fill="#9fe0ff" stroke="#3d9fd6" stroke-width="3"/>
+        <circle cx="66" cy="31" r="7" fill="#8cefdc" stroke="#31b49b" stroke-width="3"/>
+        <circle cx="45" cy="31" r="4.5" fill="#fff6b0" stroke="#f5c93f" stroke-width="2"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   Candy Tower Shop — shapes, stacking, hammer, sparkles, sounds
+----------------------------------------------------------------*/
+const $ = (sel, root = document) => root.querySelector(sel);
+
+const stage  = $('#stage');
+const tower  = $('#tower');
+const ghost  = $('#ghost');
+const menu   = $('#menu');
+const hammer = $('#hammer');
+const toolbar = $('#toolbar');
+const shop = $('#shop');
+const shopGrid = $('#shopGrid');
+
+/* ---------------- life inside the windows ---------------- */
+let clipSeq = 0;
+const lifeStyle = (dMin, dMax) =>
+  `animation-duration:${(dMin + Math.random() * (dMax - dMin)).toFixed(1)}s;animation-delay:${(-Math.random() * 12).toFixed(1)}s`;
+
+function tinyPerson(x, baseY, s = 1) {
+  return `
+    <circle cx="${x}" cy="${baseY - 12.5 * s}" r="${4.2 * s}" fill="#ffd9b8" stroke="#d98f64" stroke-width="${1.2 * s}"/>
+    <path d="M${x - 4 * s} ${baseY - 13 * s} q ${4 * s} ${-5 * s} ${8 * s} 0" fill="#7a3b70"/>
+    <circle cx="${x + 1.6 * s}" cy="${baseY - 12.6 * s}" r="${0.9 * s}" fill="#7a3b70"/>
+    <rect x="${x - 4.6 * s}" y="${baseY - 7.5 * s}" width="${9.2 * s}" height="${8.6 * s}" rx="${3 * s}"
+          fill="#8ce6d2" stroke="#2fa78f" stroke-width="${1.2 * s}"/>
+  `;
+}
+
+function peekPerson(x, sillY, s = 1) {
+  return `
+    <path d="M${x - 6.5 * s} ${sillY - 2.5 * s} q ${6.5 * s} ${4.5 * s} ${13 * s} 0" fill="#ff9fd2" stroke="#e3538f" stroke-width="${1.3 * s}" stroke-linejoin="round"/>
+    <rect x="${x + 4.5 * s}" y="${sillY - 6 * s}" width="${2.6 * s}" height="${6 * s}" rx="${1.3 * s}" fill="#ffdcbe" stroke="#d98f64" stroke-width="${1 * s}"/>
+    <circle cx="${x}" cy="${sillY - 9.5 * s}" r="${4.7 * s}" fill="#ffdcbe" stroke="#d98f64" stroke-width="${1.3 * s}"/>
+    <path d="M${x - 4.6 * s} ${sillY - 10.5 * s} q ${4.6 * s} ${-4.6 * s} ${9.2 * s} 0" fill="#6d4a86"/>
+    <circle cx="${x + 1.8 * s}" cy="${sillY - 9.8 * s}" r="${0.9 * s}" fill="#6d3b6f"/>
+  `;
+}
+
+function windowBox(x, y, w, h, r, live, opts = {}) {
+  const id = 'winclip' + (++clipSeq);
+  let life = '';
+  if (live) {
+    if (opts.light !== false) {
+      life += `<rect class="win-light" x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff2bf" style="${lifeStyle(6, 12)}"/>`;
+    }
+    if (opts.walker) {
+      life += `<g class="walker" style="--dx:${w + 26}px;${lifeStyle(5, 9)}">${tinyPerson(x + 7, y + h - 1, h > 40 ? 1 : 0.85)}</g>`;
+    }
+    if (opts.peek) {
+      life += `<g class="peek" style="${lifeStyle(9, 15)}">${peekPerson(x + w - 9, y + h + 1, h > 40 ? 1 : 0.85)}</g>`;
+    }
+  }
+  const gloss = `<path d="M${x + 8} ${y + h - 7} L${x + 16} ${y + 7}" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" opacity=".7"/>`;
+  return `<clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}"/></clipPath>
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#gSky)" stroke="#3d9fd6" stroke-width="3"/>
+    <g clip-path="url(#${id})">${life}${gloss}</g>`;
+}
+
+/* ---------------- shape artwork ---------------- */
+const SHAPES = {
+  floor: {
+    slot: 'floor', name: 'Pink', full: 'Pink Floor', w: 150, h: 70,
+    inner: (live = true) => `
+      <rect x="3" y="3" width="144" height="64" rx="17" fill="url(#gPink)" stroke="#e3538f" stroke-width="4"/>
+      <rect x="9" y="8" width="132" height="16" rx="8" fill="#ffffff" opacity=".45"/>
+      ${windowBox(17, 24, 42, 30, 9, live, { walker: true })}
+      ${windowBox(91, 24, 42, 30, 9, live, { peek: true })}
+      <rect x="12" y="58" width="126" height="5" rx="2.5" fill="#ffffff" opacity=".5"/>
+    `
+  },
+  block: {
+    slot: 'block', name: 'Sky', full: 'Sky Block', w: 120, h: 120,
+    inner: (live = true) => `
+      <rect x="3" y="3" width="114" height="114" rx="24" fill="url(#gSky)" stroke="#3d9fd6" stroke-width="4"/>
+      <rect x="10" y="8" width="100" height="20" rx="10" fill="#ffffff" opacity=".5"/>
+      <rect x="26" y="33" width="68" height="54" rx="15" fill="url(#gPink)" stroke="#e3538f" stroke-width="3"/>
+      ${windowBox(33, 39, 54, 42, 10, live, { walker: true, peek: true })}
+      <path d="M60 40 L60 80 M34 61 L86 61" stroke="#ffffff" stroke-width="4" opacity=".7"/>
+      <circle cx="60" cy="102" r="7" fill="#ffffff" opacity=".6"/>
+      <circle cx="24" cy="102" r="4" fill="#ffffff" opacity=".45"/>
+      <circle cx="96" cy="102" r="4" fill="#ffffff" opacity=".45"/>
+    `
+  },
+  roof: {
+    slot: 'roof', name: 'Candy', full: 'Candy Roof', w: 170, h: 96,
+    inner: `
+      <path d="M22 84 L85 18 L148 84 Z" fill="url(#gBubble)" stroke="#d24fbe" stroke-width="13"
+            stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M42 76 L78 28" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity=".45"/>
+      <g fill="#ffffff" opacity=".65">
+        <circle cx="58" cy="76" r="4"/><circle cx="85" cy="76" r="4"/><circle cx="112" cy="76" r="4"/>
+      </g>
+      <circle cx="85" cy="15" r="11" fill="#ff6aa8" stroke="#d8407f" stroke-width="4"/>
+      <circle cx="81" cy="11" r="3.6" fill="#ffffff" opacity=".9"/>
+    `
+  },
+  arch: {
+    slot: 'arch', name: 'Aqua', full: 'Aqua Arch', w: 130, h: 150,
+    inner: (live = true) => {
+      const door = 'M47 143 L47 84 A18 18 0 0 1 83 84 L83 143 Z';
+      const id = 'archclip' + (++clipSeq);
+      const life = live ? `
+        <rect class="win-light" x="43" y="63" width="44" height="80" fill="#fff2bf" style="${lifeStyle(6, 12)}"/>
+        <g class="walker" style="--dx:42px;${lifeStyle(6, 9)}">${tinyPerson(53, 142, 0.95)}</g>
+        <g class="peek" style="${lifeStyle(10, 16)}">${peekPerson(73, 144, 0.9)}</g>
+        <path d="M54 138 L54 94" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity=".45"/>` : '';
+      return `
+        <path d="M14 147 L14 78 A51 51 0 0 1 116 78 L116 147 Z"
+              fill="url(#gAqua)" stroke="#31b49b" stroke-width="4" stroke-linejoin="round"/>
+        <path d="${door}" fill="url(#gSky)" stroke="#3d9fd6" stroke-width="3" stroke-linejoin="round"/>
+        <clipPath id="${id}"><path d="${door}"/></clipPath>
+        <g clip-path="url(#${id})">${life}</g>
+        <path d="M30 82 L30 118" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity=".55"/>
+        <circle cx="100" cy="126" r="5" fill="#ffffff" opacity=".65"/>
+        <circle cx="100" cy="108" r="4" fill="#ffffff" opacity=".5"/>
+        <circle cx="30" cy="138" r="4.5" fill="#ffffff" opacity=".6"/>
+        <rect x="6" y="2" width="118" height="30" rx="12" fill="url(#gPink)" stroke="#e3538f" stroke-width="4"/>
+        <rect x="16" y="8" width="66" height="7" rx="3.5" fill="#ffffff" opacity=".55"/>
+      `;
+    }
+  },
+  cafe: {
+    slot: 'floor', name: 'Cafe', full: 'Cafe Floor', w: 150, h: 70,
+    inner: (live = true) => `
+      <rect x="3" y="3" width="144" height="64" rx="17" fill="url(#gAqua)" stroke="#31b49b" stroke-width="4"/>
+      <rect x="9" y="8" width="132" height="13" rx="6" fill="#ffffff" opacity=".5"/>
+      <rect x="12" y="20" width="126" height="13" rx="6" fill="#ff9fd2" stroke="#e3538f" stroke-width="2.5"/>
+      <g fill="#ffffff" opacity=".9">
+        <circle cx="24" cy="33" r="6"/><circle cx="44" cy="33" r="6"/><circle cx="64" cy="33" r="6"/>
+        <circle cx="84" cy="33" r="6"/><circle cx="104" cy="33" r="6"/><circle cx="124" cy="33" r="6"/>
+      </g>
+      ${windowBox(18, 42, 64, 20, 8, live, { walker: true })}
+      ${windowBox(90, 42, 42, 20, 8, live, { peek: true })}
+      <rect x="12" y="58" width="126" height="5" rx="2.5" fill="#ffffff" opacity=".5"/>
+    `
+  },
+  jelly: {
+    slot: 'block', name: 'Jelly', full: 'Jelly Block', w: 120, h: 120,
+    inner: (live = true) => `
+      <rect x="3" y="3" width="114" height="114" rx="30" fill="url(#gBubble)" stroke="#d24fbe" stroke-width="4"/>
+      <rect x="14" y="10" width="64" height="17" rx="8.5" fill="#ffffff" opacity=".5"/>
+      <path d="M14 98 q 46 14 92 0" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity=".4"/>
+      <path d="M14 109 q 46 11 92 0" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity=".3"/>
+      ${windowBox(30, 34, 60, 58, 15, live, { walker: true, peek: true })}
+      <g fill="#ffffff" opacity=".8">
+        <circle cx="22" cy="26" r="4"/><circle cx="98" cy="26" r="4"/><circle cx="60" cy="104" r="5"/>
+      </g>
+    `
+  },
+  dome: {
+    slot: 'roof', name: 'Dome', full: 'Dome Roof', w: 170, h: 96,
+    inner: `
+      <path d="M18 92 L18 46 Q18 8 54 8 L116 8 Q152 8 152 46 L152 92 Z"
+            fill="url(#gAqua)" stroke="#31b49b" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M38 80 L38 48 Q38 30 58 30" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity=".45"/>
+      <rect x="30" y="83" width="110" height="8" rx="4" fill="#ffffff" opacity=".5"/>
+      <g fill="#fff6b0">
+        <circle cx="66" cy="40" r="4"/><circle cx="88" cy="56" r="3.4"/><circle cx="110" cy="40" r="4"/>
+        <circle cx="126" cy="64" r="3.4"/><circle cx="52" cy="64" r="3.4"/>
+      </g>
+      <circle cx="85" cy="10" r="9" fill="#ff6aa8" stroke="#d8407f" stroke-width="3.5"/>
+      <circle cx="82" cy="7" r="2.8" fill="#ffffff" opacity=".9"/>
+    `
+  },
+  turret: {
+    slot: 'arch', name: 'Turret', full: 'Round Turret', w: 130, h: 150,
+    inner: (live = true) => `
+      <rect x="12" y="26" width="106" height="120" rx="26" fill="url(#gSky)" stroke="#3d9fd6" stroke-width="4"/>
+      <rect x="20" y="34" width="90" height="8" rx="4" fill="#ffffff" opacity=".45"/>
+      ${windowBox(26, 50, 36, 34, 10, live, { walker: true })}
+      ${windowBox(70, 50, 34, 34, 10, live, { peek: true })}
+      <rect x="45" y="100" width="40" height="46" rx="19" fill="url(#gAqua)" stroke="#31b49b" stroke-width="3"/>
+      <circle cx="77" cy="126" r="3.6" fill="#2f9f88"/>
+      <circle cx="65" cy="93" r="5" fill="#ffffff" opacity=".55"/>
+      <rect x="6" y="2" width="118" height="30" rx="12" fill="url(#gPink)" stroke="#e3538f" stroke-width="4"/>
+      <rect x="16" y="8" width="66" height="7" rx="3.5" fill="#ffffff" opacity=".55"/>
+    `
+  }
+};
+const SLOTS = ['floor', 'block', 'roof', 'arch'];
+const SLOT_NAMES = { floor: 'Floors', block: 'Blocks', roof: 'Roofs', arch: 'Arches' };
+const ORDER = ['floor', 'cafe', 'block', 'jelly', 'roof', 'dome', 'arch', 'turret'];
+// which shop shape is currently loaded into each toolbar slot
+const loadout = { floor: 'floor', block: 'block', roof: 'roof', arch: 'arch' };
+
+const dims = (type, rot) => {
+  const s = SHAPES[type];
+  const swap = rot % 180 === 90;
+  return { W: swap ? s.h : s.w, H: swap ? s.w : s.h };
+};
+
+function shapeSVG(type, rot, icon) {
+  const s = SHAPES[type];
+  const { W, H } = dims(type, rot);
+  const style = icon ? 'width:100%;height:100%' : `width:${W}px;height:${H}px`;
+  const art = typeof s.inner === 'function' ? s.inner(!icon) : s.inner;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="${style}" aria-hidden="true">
+    <g transform="translate(${(W - s.w) / 2} ${(H - s.h) / 2})">
+      <g transform="rotate(${rot} ${s.w / 2} ${s.h / 2})">${art}</g>
+    </g>
+  </svg>`;
+}
+
+/* ---------------- state ---------------- */
+const state = { pieces: [], sel: loadout.floor, menuId: null, hoverX: null, ghostX: null, scale: 1 };
+let uid = 0;
+const MIN_SUPPORT = 14; // how much overlap with a piece below counts as standing on it
+
+/* ---------------- sound ---------------- */
+let audioCtx = null;
+function ac() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (e) { return null; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function tone({ f = 600, f2 = null, t = 0.14, type = 'sine', gain = 0.14, delay = 0 }) {
+  const c = ac();
+  if (!c) return;
+  const o = c.createOscillator();
+  const g = c.createGain();
+  const now = c.currentTime + delay;
+  o.type = type;
+  o.frequency.setValueAtTime(f, now);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, now + t);
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(gain, now + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + t);
+  o.connect(g).connect(c.destination);
+  o.start(now);
+  o.stop(now + t + 0.04);
+}
+const play = {
+  tap() {
+    tone({ f: 560, f2: 320, t: 0.13, type: 'sine', gain: 0.17 });
+    tone({ f: 1180, f2: 1620, t: 0.10, type: 'triangle', gain: 0.07 });
+    tone({ f: 1650, f2: 2400, t: 0.09, type: 'sine', gain: 0.045, delay: 0.03 });
+  },
+  spin() {
+    tone({ f: 640, f2: 900, t: 0.11, type: 'triangle', gain: 0.09 });
+    tone({ f: 900, f2: 1240, t: 0.12, type: 'sine', gain: 0.075, delay: 0.07 });
+  },
+  pop() {
+    tone({ f: 420, f2: 150, t: 0.18, type: 'sine', gain: 0.16 });
+    tone({ f: 1000, f2: 420, t: 0.12, type: 'triangle', gain: 0.06 });
+  },
+  select() {
+    tone({ f: 880, f2: 1100, t: 0.09, type: 'sine', gain: 0.08 });
+  },
+  clear() {
+    [523, 659, 784, 1046].forEach((f, i) => tone({ f, t: 0.16, type: 'sine', gain: 0.08, delay: i * 0.07 }));
+  },
+  sparkle() {
+    [1318, 1760, 2093].forEach((f, i) => tone({ f, t: 0.2, type: 'sine', gain: 0.04, delay: i * 0.05 }));
+  }
+};
+
+/* ---------------- sparkles ---------------- */
+const SPARKS = ['#ff9fd2', '#ffcfee', '#9fe0ff', '#8cefdc', '#fff6b0', '#ffffff', '#c9b6ff', '#ffb3dd'];
+const STAR = 'polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)';
+
+function burst(x, y, n = 15) {
+  const puff = document.createElement('div');
+  puff.className = 'puff';
+  puff.style.left = x + 'px';
+  puff.style.top = y + 'px';
+  puff.style.width = '46px';
+  puff.style.height = '46px';
+  document.body.appendChild(puff);
+  puff.addEventListener('animationend', () => puff.remove());
+
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    const ang = (Math.PI * 2 * i) / n + Math.random() * 0.7;
+    const dist = 38 + Math.random() * 74;
+    const size = 8 + Math.random() * 13;
+    s.style.left = x + 'px';
+    s.style.top = y + 'px';
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    s.style.background = SPARKS[(Math.random() * SPARKS.length) | 0];
+    if (Math.random() < 0.45) s.style.clipPath = STAR;
+    else s.style.borderRadius = '50%';
+    s.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+    s.style.setProperty('--dy', (Math.sin(ang) * dist - 26) + 'px');
+    s.style.setProperty('--s', (0.15 + Math.random() * 0.5).toFixed(2));
+    s.style.animationDelay = (Math.random() * 0.07) + 's';
+    document.body.appendChild(s);
+    s.addEventListener('animationend', () => s.remove());
+  }
+}
+
+/* ---------------- free placement ---------------- */
+const clampX = (x, W) => {
+  // the tower is scaled to fit, so keep the piece on screen in screen pixels
+  const half = Math.max(0, (stage.clientWidth / 2 - 4) / state.scale - W / 2);
+  return Math.max(-half, Math.min(half, x));
+};
+
+function xFromEvent(clientX) {
+  const r = stage.getBoundingClientRect();
+  const { W } = dims(state.sel, 0);
+  return clampX((clientX - (r.left + r.width / 2)) / state.scale, W);
+}
+
+// the top of whatever the shape would land on at this spot (0 = the ground)
+function supportTopAt(x, W, pieces) {
+  let bottom = 0;
+  for (const p of pieces) {
+    const d = dims(p.type, p.rot);
+    const overlap = Math.min(x + W / 2, p.x + d.W / 2) - Math.max(x - W / 2, p.x - d.W / 2);
+    if (overlap >= Math.min(MIN_SUPPORT, W * 0.2)) bottom = Math.max(bottom, p.top || 0);
+  }
+  return bottom;
+}
+
+// loose snap: line up with the centre or the edges of a nearby piece
+function snapX(x, type) {
+  const { W } = dims(type, 0);
+  let best = clampX(x, W);
+  let bestDist = 22;
+  for (const p of state.pieces) {
+    const d = dims(p.type, p.rot);
+    const options = [p.x, p.x - d.W / 2 + W / 2, p.x + d.W / 2 - W / 2];
+    for (const option of options) {
+      const cx = clampX(option, W);
+      const dist = Math.abs(cx - x);
+      if (dist < bestDist) { bestDist = dist; best = cx; }
+    }
+  }
+  return best;
+}
+
+/* ---------------- layout ---------------- */
+function layout() {
+  if (state.hoverX == null) state.hoverX = 0;
+  let tallest = 0, left = 0, right = 0;
+  const placed = [];
+
+  for (const p of state.pieces) {
+    const { W, H } = dims(p.type, p.rot);
+    let bottom = 0;
+    for (const q of placed) {
+      const overlap = Math.min(p.x + W / 2, q.x + q.W / 2) - Math.max(p.x - W / 2, q.x - q.W / 2);
+      if (overlap >= Math.min(MIN_SUPPORT, W * 0.2)) bottom = Math.max(bottom, q.top);
+    }
+    const top = bottom + H;
+    p.el.style.left = p.x + 'px';
+    p.el.style.bottom = bottom + 'px';
+    p.top = top;
+    placed.push({ x: p.x, W, top });
+    tallest = Math.max(tallest, top);
+    left = Math.min(left, p.x - W / 2);
+    right = Math.max(right, p.x + W / 2);
+  }
+
+  const boundsW = Math.max(right - left, 220);
+  const availH = Math.max(150, stage.clientHeight - 150);
+  const availW = Math.max(200, stage.clientWidth - 22);
+  const scale = Math.min(1, Math.max(0.3, Math.min(availH / Math.max(tallest, 1), availW / boundsW)));
+  state.scale = scale;
+  tower.style.transform = `scale(${scale.toFixed(3)})`;
+
+  const { W, H } = dims(state.sel, 0);
+  const gx = snapX(state.hoverX, state.sel);
+  const gb = supportTopAt(gx, W, state.pieces);
+  state.ghostX = gx;
+  ghost.style.left = gx + 'px';
+  ghost.style.width = (W + 16) + 'px';
+  ghost.style.height = (H + 16) + 'px';
+  ghost.style.bottom = (gb + 8) + 'px';
+  ghost.querySelector('span').textContent = gb > 0 ? '' : 'tap!';
+}
+
+/* ---------------- placing ---------------- */
+function place(type, x) {
+  const px = snapX(Number.isFinite(x) ? x : 0, type);
+  const p = { id: 'p' + (++uid), type, rot: 0, x: px, top: 0, jitter: (Math.random() * 3 - 1.5) };
+  const el = document.createElement('div');
+  el.className = 'piece';
+  el.dataset.id = p.id;
+  el.style.left = px + 'px';
+  el.style.transform = `translateX(-50%) rotate(${p.jitter.toFixed(2)}deg)`;
+  el.innerHTML = `<div class="bounce">${shapeSVG(type, 0)}</div>`;
+  p.el = el;
+
+  state.pieces.push(p);
+  tower.appendChild(el);
+  tower.appendChild(ghost);
+  layout();
+
+  requestAnimationFrame(() => {
+    const r = el.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height * 0.62, 16);
+  });
+  play.tap();
+  play.sparkle();
+}
+
+/* ---------------- edit menu ---------------- */
+function byId(id) { return state.pieces.find(p => p.id === id); }
+
+function positionMenu(el) {
+  const r = el.getBoundingClientRect();
+  const mw = menu.offsetWidth;
+  const mh = menu.offsetHeight;
+  const cx = Math.min(Math.max(r.left + r.width / 2, mw / 2 + 12), window.innerWidth - mw / 2 - 12);
+  menu.style.left = cx + 'px';
+  if (r.top - 14 - mh < 78) {
+    menu.classList.add('below');
+    menu.style.top = Math.min(r.bottom + 12, window.innerHeight - mh - 90) + 'px';
+  } else {
+    menu.classList.remove('below');
+    menu.style.top = (r.top - 14) + 'px';
+  }
+}
+
+function openMenu(id) {
+  const p = byId(id);
+  if (!p) return;
+  state.menuId = id;
+  menu.classList.remove('hidden');
+  positionMenu(p.el);
+}
+
+function closeMenu() {
+  state.menuId = null;
+  menu.classList.add('hidden');
+}
+
+function spinPiece(id) {
+  const p = byId(id);
+  if (!p) return;
+  p.rot = (p.rot + 90) % 360;
+  p.el.innerHTML = `<div class="landed">${shapeSVG(p.type, p.rot)}</div>`;
+  layout();
+  const r = p.el.getBoundingClientRect();
+  burst(r.left + r.width / 2, r.top + r.height / 2, 12);
+  play.spin();
+  positionMenu(p.el);
+}
+
+function popPiece(id) {
+  const p = byId(id);
+  if (!p) return;
+  const r = p.el.getBoundingClientRect();
+  burst(r.left + r.width / 2, r.top + r.height / 2, 16);
+  play.pop();
+  p.el.remove();
+  state.pieces = state.pieces.filter(x => x !== p);
+  closeMenu();
+  layout();
+}
+
+/* ---------------- hammer ---------------- */
+const finePointer = window.matchMedia('(pointer:fine)').matches;
+let hammerHideTimer = null;
+let swingTimer = null;
+
+function moveHammer(x, y) {
+  hammer.style.transform = `translate3d(${x - 39}px, ${y - 34}px, 0)`;
+}
+
+function swingHammer(x, y) {
+  moveHammer(x, y);
+  hammer.classList.add('show');
+  hammer.classList.remove('swing');
+  void hammer.offsetWidth;
+  hammer.classList.add('swing');
+  clearTimeout(swingTimer);
+  swingTimer = setTimeout(() => hammer.classList.remove('swing'), 300);
+  // touch screens have no cursor, so show the hammer just for the tap
+  if (!finePointer) {
+    clearTimeout(hammerHideTimer);
+    hammerHideTimer = setTimeout(() => hammer.classList.remove('show'), 560);
+  }
+}
+
+stage.addEventListener('pointermove', (e) => {
+  if (!finePointer) return;
+  moveHammer(e.clientX, e.clientY);
+  hammer.classList.add('show');
+  state.hoverX = xFromEvent(e.clientX);
+  if (snapX(state.hoverX, state.sel) !== state.ghostX) layout();
+});
+stage.addEventListener('pointerleave', () => {
+  if (finePointer) hammer.classList.remove('show');
+});
+
+/* ---------------- stage interaction ---------------- */
+stage.addEventListener('pointerdown', (e) => {
+  if (e.button !== undefined && e.button !== 0) return;
+  if (!shop.classList.contains('hidden')) { closeShop(); return; }
+  swingHammer(e.clientX, e.clientY);
+
+  const pieceEl = e.target.closest('.piece');
+  if (pieceEl) {
+    if (state.menuId === pieceEl.dataset.id) closeMenu();
+    else openMenu(pieceEl.dataset.id);
+    return;
+  }
+  if (state.menuId) { closeMenu(); return; }
+  state.hoverX = xFromEvent(e.clientX);
+  place(state.sel, state.hoverX);
+});
+
+document.addEventListener('pointerdown', (e) => {
+  if (!state.menuId) return;
+  if (e.target.closest('#menu') || e.target.closest('.piece')) return;
+  closeMenu();
+});
+
+/* ---------------- toolbar ---------------- */
+function markToolbar() {
+  [...toolbar.children].forEach((b) => {
+    const on = loadout[b.dataset.slot] === state.sel;
+    b.classList.toggle('selected', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
+function buildToolbar() {
+  toolbar.innerHTML = '';
+  SLOTS.forEach((slot) => {
+    const type = loadout[slot];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'shape-btn';
+    b.dataset.slot = slot;
+    b.innerHTML = `<span class="icon">${shapeSVG(type, 0, true)}</span><span class="label">${SHAPES[type].name}</span>`;
+    b.addEventListener('click', () => selectShape(loadout[slot]));
+    toolbar.appendChild(b);
+  });
+  markToolbar();
+}
+
+function selectShape(type) {
+  state.sel = type;
+  markToolbar();
+  const picked = [...toolbar.children].find((b) => loadout[b.dataset.slot] === type);
+  if (picked) {
+    picked.classList.remove('pop');
+    void picked.offsetWidth;
+    picked.classList.add('pop');
+    setTimeout(() => picked.classList.remove('pop'), 360);
+  }
+  closeMenu();
+  closeShop();
+  layout();
+  play.select();
+}
+
+/* ---------------- candy shop panel ---------------- */
+function markShop() {
+  [...shopGrid.children].forEach((card) => {
+    const on = loadout[SHAPES[card.dataset.type].slot] === card.dataset.type;
+    card.classList.toggle('equipped', on);
+    card.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
+function equipShape(type) {
+  loadout[SHAPES[type].slot] = type;
+  buildToolbar();
+  markShop();
+  selectShape(type);
+}
+
+function buildShop() {
+  shopGrid.innerHTML = '';
+  ORDER.forEach((type) => {
+    const s = SHAPES[type];
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'shop-card';
+    card.dataset.type = type;
+    card.innerHTML = `<span class="shop-icon">${shapeSVG(type, 0, true)}</span>
+      <span class="shop-text"><span class="shop-label">${s.full}</span><span class="shop-tag">${SLOT_NAMES[s.slot]}</span></span>`;
+    card.addEventListener('click', () => {
+      equipShape(type);
+      const r = card.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.top + r.height / 2, 14);
+      play.sparkle();
+    });
+    shopGrid.appendChild(card);
+  });
+  markShop();
+}
+
+function openShop() {
+  closeMenu();
+  shop.classList.remove('hidden');
+  play.select();
+}
+function closeShop() { shop.classList.add('hidden'); }
+
+$('#shopBtn').addEventListener('click', () => {
+  if (shop.classList.contains('hidden')) openShop();
+  else closeShop();
+});
+$('#shopClose').addEventListener('click', closeShop);
+
+document.addEventListener('pointerdown', (e) => {
+  if (shop.classList.contains('hidden')) return;
+  if (e.target.closest('#shop') || e.target.closest('#shopBtn')) return;
+  closeShop();
+});
+
+/* ---------------- menu buttons ---------------- */
+$('#spinBtn').addEventListener('click', () => { if (state.menuId) spinPiece(state.menuId); });
+$('#popBtn').addEventListener('click', () => { if (state.menuId) popPiece(state.menuId); });
+
+/* ---------------- tidy up ---------------- */
+$('#clear').addEventListener('click', () => {
+  if (!state.pieces.length) { play.pop(); return; }
+  const r = tower.getBoundingClientRect();
+  burst(Math.max(60, r.left + r.width / 2), Math.min(window.innerHeight - 140, Math.max(120, r.top + 60)), 26);
+  state.pieces.forEach((p) => p.el.remove());
+  state.pieces = [];
+  state.hoverX = 0;
+  closeMenu();
+  closeShop();
+  layout();
+  play.clear();
+});
+
+/* ---------------- birds in the sky ---------------- */
+const skyLayer = $('#sky');
+const BIRD_BODIES = ['#ffe08a', '#ffb3dd', '#9fe0ff', '#b9f3e2'];
+
+function birdSVG() {
+  const body = BIRD_BODIES[(Math.random() * BIRD_BODIES.length) | 0];
+  return `<div class="bird-inner">
+    <svg viewBox="0 0 56 34" width="56" height="34" aria-hidden="true">
+      <g class="flapL"><path d="M24 17 q -9 -13 -16 -4 q 8 9 16 4" fill="#ffffff" stroke="#c9b6ff" stroke-width="2.2" stroke-linejoin="round"/></g>
+      <g class="flapR"><path d="M32 17 q 9 -13 16 -4 q -8 9 -16 4" fill="#ffffff" stroke="#c9b6ff" stroke-width="2.2" stroke-linejoin="round"/></g>
+      <ellipse cx="28" cy="19" rx="11" ry="7.5" fill="${body}" stroke="#e0ae4f" stroke-width="2.2"/>
+      <circle cx="36" cy="15" r="1.9" fill="#6d3b6f"/>
+      <path d="M39 18 l6 2 l-6 2.2 z" fill="#ffb84d" stroke="#e09a2f" stroke-width="1.4" stroke-linejoin="round"/>
+    </svg>
+  </div>`;
+}
+
+function flyBird() {
+  const el = document.createElement('div');
+  el.className = 'bird';
+  el.innerHTML = birdSVG();
+  const dir = Math.random() < 0.3 ? -1 : 1;
+  const sc = 0.55 + Math.random() * 0.7;
+  el.firstElementChild.style.transform = `scale(${(dir * sc).toFixed(2)}, ${sc.toFixed(2)})`;
+  el.firstElementChild.style.transformOrigin = '50% 50%';
+  el.style.top = (34 + Math.random() * 230) + 'px';
+  const vw = window.innerWidth;
+  const startX = dir === 1 ? -70 : vw + 70;
+  const travel = dir === 1 ? vw + 170 : -(vw + 170);
+  el.style.left = startX + 'px';
+  skyLayer.appendChild(el);
+  const anim = el.animate([
+    { transform: 'translate(0px, 0px)' },
+    { transform: `translate(${travel * 0.25}px, -14px)` },
+    { transform: `translate(${travel * 0.5}px, 10px)` },
+    { transform: `translate(${travel * 0.75}px, -10px)` },
+    { transform: `translate(${travel}px, 0px)` }
+  ], { duration: 9000 + Math.random() * 7000, easing: 'linear' });
+  anim.onfinish = () => el.remove();
+}
+
+function scheduleBird() {
+  setTimeout(() => {
+    flyBird();
+    if (Math.random() < 0.28) setTimeout(flyBird, 180 + Math.random() * 320);
+    scheduleBird();
+  }, 4500 + Math.random() * 8500);
+}
+
+/* ---------------- people + traffic on the ground ---------------- */
+const life = $('#life');
+const COATS = [
+  { c: '#ff9fd2', s: '#e3538f', l: '#8ce6d2', ls: '#31b49b' },
+  { c: '#9fe0ff', s: '#3d9fd6', l: '#ffb3dd', ls: '#e3538f' },
+  { c: '#b9c8ff', s: '#8494e2', l: '#ffe08a', ls: '#d9a93a' },
+  { c: '#ffd28a', s: '#d99a34', l: '#a6e8ff', ls: '#3d9fd6' },
+  { c: '#8ce6d2', s: '#31b49b', l: '#ffc7a6', ls: '#dd8f5c' }
+];
+const SKIN = ['#ffdcbe', '#f3c8a4', '#e5b58c', '#ffe8d2'];
+const HAIR = ['#7a3b70', '#a8642f', '#4b3a63', '#c04f7d', '#3f6fa8'];
+
+function personSVG() {
+  const k = COATS[(Math.random() * COATS.length) | 0];
+  const skin = SKIN[(Math.random() * SKIN.length) | 0];
+  const hair = HAIR[(Math.random() * HAIR.length) | 0];
+  const hat = Math.random() < 0.3;
+  return `<svg viewBox="0 0 36 50" aria-hidden="true">
+    <ellipse cx="18" cy="48" rx="10" ry="2.2" fill="#ffc9e4" opacity=".45"/>
+    <g class="legA"><rect x="13" y="33" width="5" height="13" rx="2.5" fill="${k.l}" stroke="${k.ls}" stroke-width="2"/></g>
+    <g class="legB"><rect x="20" y="33" width="5" height="13" rx="2.5" fill="${k.l}" stroke="${k.ls}" stroke-width="2"/></g>
+    <rect x="1.5" y="25" width="5" height="7" rx="2" fill="#ffe08a" stroke="#d9a93a" stroke-width="1.8"/>
+    <rect x="11.5" y="20" width="13" height="16" rx="6" fill="${k.c}" stroke="${k.s}" stroke-width="2.2"/>
+    <rect x="7.5" y="23" width="5" height="10" rx="2.5" fill="${k.c}" stroke="${k.s}" stroke-width="2"/>
+    <rect x="23.5" y="23" width="5" height="10" rx="2.5" fill="${k.c}" stroke="${k.s}" stroke-width="2"/>
+    <circle cx="18" cy="13" r="8" fill="${skin}" stroke="#d98f64" stroke-width="2.2"/>
+    ${hat ? `<path d="M10 9 q 8 -8 16 0 q -8 -2 -16 0" fill="${k.s}"/><rect x="8" y="8" width="20" height="3" rx="1.5" fill="${k.s}"/>` : `<path d="M10 8.5 q 8 -7 16 0 q -4 -3 -8 -3 q -5 0 -8 3" fill="${hair}"/>`}
+    <circle cx="21" cy="13" r="1.6" fill="#6d3b6f"/>
+    <path d="M18.5 17 q 2 1.6 3.6 0" stroke="#c46b6b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
+const CARDS = [
+  { b: '#ff9fd2', s: '#e3538f' },
+  { b: '#9fe0ff', s: '#3d9fd6' },
+  { b: '#b9f3e2', s: '#31b49b' },
+  { b: '#ffd28a', s: '#d99a34' }
+];
+
+function carSVG() {
+  const k = CARDS[(Math.random() * CARDS.length) | 0];
+  return `<svg viewBox="0 0 80 46" aria-hidden="true">
+    <rect x="4" y="16" width="72" height="22" rx="11" fill="${k.b}" stroke="${k.s}" stroke-width="2.6"/>
+    <path d="M19 17 q 4 -11 17 -11 h 8 q 11 0 14 11 z" fill="#eafaff" stroke="${k.s}" stroke-width="2.4" stroke-linejoin="round"/>
+    <rect x="9" y="10" width="62" height="7" rx="3.5" fill="#ffffff" opacity=".5"/>
+    <circle cx="22" cy="38" r="7" fill="#ffffff" stroke="#7a3b70" stroke-width="2.6"/>
+    <circle cx="58" cy="38" r="7" fill="#ffffff" stroke="#7a3b70" stroke-width="2.6"/>
+    <circle cx="22" cy="38" r="2.4" fill="#7a3b70"/>
+    <circle cx="58" cy="38" r="2.4" fill="#7a3b70"/>
+    <circle cx="70" cy="26" r="2.8" fill="#fff6b0" stroke="#e0ae4f" stroke-width="1.4"/>
+  </svg>`;
+}
+
+let peopleAlive = 0;
+let carsAlive = 0;
+
+function spawnPerson(mode) {
+  if (peopleAlive >= 5) return;
+  const el = document.createElement('div');
+  el.className = 'peep';
+  el.innerHTML = `<span class="peep-inner">${personSVG()}</span>`;
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  if (dir === -1) el.firstElementChild.style.transform = 'scaleX(-1)';
+
+  const vw = stage.clientWidth || window.innerWidth;
+  const w = 34;
+  let startX, endX, fadeIn = false, fadeOut = false;
+  if (mode === 'enter') {
+    startX = dir === 1 ? -w : vw + w;
+    endX = vw * 0.5 + (dir === 1 ? -w * 0.6 : w * 0.6);
+    fadeOut = true;
+  } else if (mode === 'exit') {
+    startX = vw * 0.5 + (dir === 1 ? -w * 0.6 : w * 0.6);
+    endX = dir === 1 ? vw + w : -w;
+    fadeIn = true;
+  } else {
+    startX = dir === 1 ? -w : vw + w;
+    endX = dir === 1 ? vw + w : -w;
+  }
+
+  el.style.left = startX + 'px';
+  life.appendChild(el);
+  peopleAlive++;
+  const travel = endX - startX;
+  const dur = Math.max(4200, (Math.abs(travel) / (38 + Math.random() * 20)) * 1000);
+  const anim = el.animate([
+    { transform: 'translateX(0px)', opacity: fadeIn ? 0 : 1, offset: 0 },
+    { transform: `translateX(${travel * 0.12}px)`, opacity: 1, offset: 0.16 },
+    { transform: `translateX(${travel * 0.88}px)`, opacity: 1, offset: 0.84 },
+    { transform: `translateX(${travel}px)`, opacity: fadeOut ? 0 : 1, offset: 1 }
+  ], { duration: dur, easing: 'linear' });
+  anim.onfinish = () => { el.remove(); peopleAlive--; };
+}
+
+function spawnCar() {
+  if (carsAlive >= 2) return;
+  const el = document.createElement('div');
+  el.className = 'car';
+  el.innerHTML = `<span class="car-inner">${carSVG()}</span>`;
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  if (dir === -1) el.firstElementChild.style.transform = 'scaleX(-1)';
+
+  const vw = stage.clientWidth || window.innerWidth;
+  const startX = dir === 1 ? -90 : vw + 90;
+  const travel = dir === 1 ? vw + 200 : -(vw + 200);
+  el.style.left = startX + 'px';
+  life.appendChild(el);
+  carsAlive++;
+  const anim = el.animate([{ transform: 'translateX(0px)' }, { transform: `translateX(${travel}px)` }], {
+    duration: 5600 + Math.random() * 3200,
+    easing: 'linear'
+  });
+  anim.onfinish = () => { el.remove(); carsAlive--; };
+}
+
+function scheduleLife() {
+  setTimeout(() => {
+    const roll = Math.random();
+    if (roll < 0.58) spawnPerson('cross');
+    else if (roll < 0.73) spawnPerson('enter');
+    else if (roll < 0.88) spawnPerson('exit');
+    else spawnCar();
+    scheduleLife();
+  }, 1700 + Math.random() * 2300);
+}
+
+/* ---------------- start ---------------- */
+buildToolbar();
+buildShop();
+layout();
+window.addEventListener('resize', layout);
+
+spawnPerson('cross');
+setTimeout(() => spawnPerson('exit'), 700);
+setTimeout(() => spawnCar(), 2600);
+scheduleLife();
+setTimeout(flyBird, 1200);
+scheduleBird();
+</script>
+</body>
+</html>
